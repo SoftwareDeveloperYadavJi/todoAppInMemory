@@ -110,23 +110,32 @@
         <h2>Tasks</h2>
         <ul id="dataList"></ul>
     </main>
-
     <script>
-        // Function to fetch data from data.json
-        async function fetchData() {
-            const response = await fetch('http://localhost:3000/api');
-            const data = await response.json();
+        // Check if 'data.json' equivalent exists in local storage
+        function loadData() {
+            const storedData = localStorage.getItem('data');
+            if (!storedData) {
+                // If no data found, create an empty array and store it
+                localStorage.setItem('data', JSON.stringify([]));
+                return [];
+            }
+            return JSON.parse(storedData);
+        }
+
+        // Function to display data from local storage
+        function displayData() {
             const dataList = document.getElementById('dataList');
+            const data = loadData();
             dataList.innerHTML = '';
-            data.forEach(item => {
+            data.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.textContent = item;
 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = 'Delete';
-                deleteBtn.classList.add('delete-btn');
+                deleteBtn.classList.add('delete-btn')
                 deleteBtn.addEventListener('click', () => {
-                    deleteTask(item);
+                    deleteTask(index);
                 });
 
                 li.append(deleteBtn);
@@ -134,50 +143,30 @@
             });
         }
 
-        // Function to handle form submission and save data
-        document.getElementById('dataform').addEventListener('submit', async function(event) {
+        // Function to save new data
+        document.getElementById('dataform').addEventListener('submit', function(event) {
             event.preventDefault();
             const userData = document.getElementById('userdata').value;
             if (userData.trim() === '') return; // Prevent empty submissions
 
-            const response = await fetch('/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ data: userData }),
-            });
+            const data = loadData();
+            data.push(userData);
+            localStorage.setItem('data', JSON.stringify(data));
+            document.getElementById('userdata').value = ''; // Clear input
 
-            if (response.ok) {
-                alert("Task added successfully");
-                document.getElementById('userdata').value = "";
-                fetchData(); // Refresh the displayed data
-            } else {
-                alert("Failed to add task");
-            }
+            displayData(); // Refresh the displayed data
         });
 
-        // Function to delete a task 
-        async function deleteTask(task) {
-            const response = await fetch('/delete', {
-                method:"DELETE",
-                headers:{
-                    'Content-Type':'application/json'
-                },
-                body : JSON.stringify({task})
-            })
-
-            if(response.ok){
-                
-                fetchData();
-
-            }else{
-                alert("Falied to delete")
-            }
+        // Function to delete a task
+        function deleteTask(index) {
+            const data = loadData();
+            data.splice(index, 1);
+            localStorage.setItem('data', JSON.stringify(data));
+            displayData(); // Refresh the displayed data
         }
 
-        // Initial fetch of tasks
-        fetchData();
+        // Initial display of tasks
+        displayData();
     </script>
 </body>
 </html>
